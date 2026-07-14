@@ -3,6 +3,11 @@ name: nu-app-skill
 description: Build Nu apps. Use when writing code against the Nu programming model - Refs, Queries, Commands, Actions, Flows, Spans, Fabrics, Shapes. Read before writing any Nu app-shaped code.
 ---
 
+# Before you write code
+
+- **Read the model.** Skim `nustackdev/interaction-model/00-abstract/index.md` and `01-nu/index.md` first — the two-citizens picture and the atom/composition split are the ground you build on. If `nustackdev/interaction-model/` isn't a sibling of the repo you're in, clone it into a temp dir (`git clone https://github.com/nustackdev/interaction-model.git /tmp/interaction-model`) and read those two indexes.
+- **Read real apps.** Skim the top-level example files in `nustackdev/nu/examples/` (the `.py` files directly under `examples/`, not the ones nested in subdirectories). Names may drift over time — something like `basic.py`, `rocksdb.py`, `nudle_memory.py`, `nudle_rocksdb.py` — but trust what's actually there over these names. The progression covers mem → persistent → browser UI. If `nustackdev/nu/` isn't a sibling, clone it into a temp dir (`git clone https://github.com/nustackdev/nu.git /tmp/nu`) and read what's at the top level of `examples/`.
+
 # Apps: principles for building on Nu
 
 A Nu app is one tree that a runner evaluates. Every construct maps to a documented kind: Ref, Query, Command, Action, Flow, Span. This guide is the compressed source of truth — every bullet is one rule, an example only when it earns its place. Anti-patterns at the end are the failure modes a first attempt keeps landing on.
@@ -210,5 +215,4 @@ A Nu app is one tree that a runner evaluates. Every construct maps to a document
 
 ## Reference apps
 
-- `nulog` (`nustackdev/nulog`) — smallest end-to-end: `shapes` / `writes` / `reads` / `viewer`, five files. Every principle above lives here.
-- `nu/examples/nudle/counter.py`, `wish_jar.py`, `kh57_stream.py` — the UI patterns the reactive section formalizes.
+- The top-level `.py` files directly under `nu/examples/` (not the ones in subdirectories) — small, self-contained apps covering mem, persistent, and browser UI. Names may drift; read what's actually there.
