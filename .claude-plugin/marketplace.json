@@ -1,0 +1,15 @@
+{
+  "name": "nustack",
+  "description": "Claude Code plugins for nustack.",
+  "owner": {
+    "name": "nustackdev",
+    "email": "gorarkln@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "nuskills",
+      "source": "./",
+      "description": "Write Nu apps and program a running nuspace."
+    }
+  ]
+}

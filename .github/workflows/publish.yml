@@ -1,0 +1,111 @@
+# Publishes the `nuskills` distribution to PyPI on a tag push like `nuskills@0.1.0`,
+# and creates a GitHub Release attached to the tag. Manual "Run workflow"
+# dispatch builds only, unless you tick `publish`.
+#
+# Trusted publisher (OIDC, no secrets) is registered on PyPI:
+#     PyPI project name: nuskills
+#     Owner: nustackdev
+#     Repository name: nuskills
+#     Workflow name: publish.yml
+#     Environment name: (blank)
+#
+# Versions are local to this repo, not in step with nu.
+#
+# Release flow:
+#   1. Bump `version` in `pyproject.toml` and `.claude-plugin/plugin.json`.
+#   2. Rename the CHANGELOG's `Unreleased` heading to the new version + date.
+#   3. Commit and push to main.
+#   4. `git tag nuskills@X.Y.Z && git push origin nuskills@X.Y.Z`.
+name: Publish nuskills to PyPI
+
+on:
+  push:
+    tags: ["nuskills@*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to PyPI (otherwise build only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # needed to create the GitHub Release on tag push
+  id-token: write   # needed for PyPI trusted publishing (OIDC)
+
+concurrency:
+  group: publish-nuskills
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: verify tag matches pyproject.toml and plugin.json versions
+        if: startsWith(github.ref, 'refs/tags/nuskills@')
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/nuskills@}"
+          PKG_VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          PLUGIN_VERSION=$(python -c "import json; print(json.load(open('.claude-plugin/plugin.json'))['version'])")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ] || [ "$TAG_VERSION" != "$PLUGIN_VERSION" ]; then
+            echo "tag nuskills@$TAG_VERSION does not match pyproject.toml $PKG_VERSION / plugin.json $PLUGIN_VERSION"
+            exit 1
+          fi
+
+      # Build is metadata-only for a hatchling project, so the
+      # `[tool.uv.sources]` path entries (sibling checkouts absent on CI) are
+      # never resolved.
+      - name: build distribution
+        run: uv build --out-dir dist
+
+      # skip-existing keeps this idempotent: a rerun after a partial failure
+      # resumes, and a tag can be pushed after a manual publish to cut the
+      # GitHub Release.
+      - name: publish nuskills
+        if: >-
+          startsWith(github.ref, 'refs/tags/nuskills@') || inputs.publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          skip-existing: true
+
+      - name: build release notes from CHANGELOG
+        if: startsWith(github.ref, 'refs/tags/nuskills@')
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/nuskills@}"
+          PREV=$(git tag -l 'nuskills@*' --sort=-v:refname | grep -v "^nuskills@${VERSION}$" | head -1)
+          {
+            echo "## Changelog"
+            echo
+            awk -v ver="$VERSION" '
+              $0 ~ "^## "ver"( |$)" {flag=1; next}
+              flag && /^## / {exit}
+              flag {print}
+            ' CHANGELOG.md
+            if [ -n "$PREV" ]; then
+              echo
+              echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREV}...nuskills@${VERSION}"
+            fi
+          } > release_notes.md
+          cat release_notes.md
+
+      - name: create github release
+        if: startsWith(github.ref, 'refs/tags/nuskills@')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release_notes.md
+          files: |
+            dist/*.whl
+            dist/*.tar.gz

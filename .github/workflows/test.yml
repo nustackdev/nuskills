@@ -1,0 +1,156 @@
+# Builds every fenced block in the corpus against the Nu stack, checks the
+# built skills match the corpus, and lints.
+#
+# Two stacks, one job each:
+#   main      nu, nuspace and nuverse checked out next to this repo, the same
+#             layout `[tool.uv.sources]` wires up editable for local work.
+#             Catches a corpus piece that main has already broken.
+#   released  the latest nucore / nustd[all] / nuspace / nuverse from PyPI.
+#             What a user installing today gets, and what the published
+#             skills must hold for.
+#
+# Triggers:
+#   push / pull_request   both stacks
+#   schedule (nightly)    both stacks: main moves without touching this repo
+#   workflow_dispatch     both stacks, by hand
+#   repository_dispatch   fired by a release in a sibling repo, types below.
+#                         `client_payload.version` (optional) pins the package
+#                         that was just released, and the released job waits
+#                         for it to show on PyPI before testing.
+#
+# What a sibling release adds to fire it (a step after its publish steps):
+#
+#   - name: tell nuskills
+#     uses: peter-evans/repository-dispatch@v3
+#     with:
+#       token: ${{ secrets.NUSKILLS_DISPATCH_TOKEN }}
+#       repository: nustackdev/nuskills
+#       event-type: nu-release            # or nuspace-release, nuverse-release
+#       client-payload: '{"version": "${{ steps.version.outputs.version }}"}'
+#
+# NUSKILLS_DISPATCH_TOKEN: a fine-grained token with Contents read/write on
+# nustackdev/nuskills (the default GITHUB_TOKEN cannot reach another repo).
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [nu-release, nuspace-release, nuverse-release]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  main:
+    name: stack on main
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: nuskills
+
+      # Side by side, as `[tool.uv.sources]` expects: ../nu, ../nuspace, ../nuverse.
+      - uses: actions/checkout@v4
+        with:
+          repository: nustackdev/nu
+          path: nu
+      - uses: actions/checkout@v4
+        with:
+          repository: nustackdev/nuspace
+          path: nuspace
+      - uses: actions/checkout@v4
+        with:
+          repository: nustackdev/nuverse
+          path: nuverse
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.10"
+
+      # nuspace-ui's wheel force-includes the vite build in dist/. No test
+      # serves the browser, so a stub stands in for an npm build.
+      - name: stub the nuspace-ui bundle
+        run: |
+          mkdir -p nuspace/pkgs/ts/nuspace-ui/dist
+          echo '<!doctype html>' > nuspace/pkgs/ts/nuspace-ui/dist/index.html
+
+      # Not --locked: the siblings bump their versions on their own, and the
+      # lock follows them here.
+      - name: sync
+        working-directory: nuskills
+        run: uv sync --python 3.10
+
+      - name: versions
+        working-directory: nuskills
+        run: uv pip list | grep -Ei '^(nucore|nustd|nuspace|nuverse) '
+
+      - name: ruff
+        working-directory: nuskills
+        run: uv run ruff check
+
+      - name: skills up to date
+        working-directory: nuskills
+        run: uv run python -m nuskills.build --check
+
+      - name: pytest
+        working-directory: nuskills
+        run: uv run pytest
+
+  released:
+    name: stack on PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.10"
+
+      # A plain venv, not `uv sync`: the project's sources point at sibling
+      # checkouts, and this job wants the index. After a release dispatch, pin
+      # the package just released and retry until PyPI serves it.
+      - name: install the released stack
+        env:
+          EVENT: ${{ github.event.action }}
+          VERSION: ${{ github.event.client_payload.version }}
+        run: |
+          uv venv --python 3.10
+          PIN=""
+          if [ -n "$VERSION" ]; then
+            case "$EVENT" in
+              nu-release) PIN="nucore==$VERSION nustd[all]==$VERSION" ;;
+              nuspace-release) PIN="nuspace==$VERSION" ;;
+              nuverse-release) PIN="nuverse==$VERSION" ;;
+            esac
+          fi
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if uv pip install --refresh -e . "nustd[all]" nuspace nuverse $PIN \
+                ruff pytest pytest-asyncio pytest-timeout; then
+              exit 0
+            fi
+            echo "attempt $attempt: not on PyPI yet, retrying in 30s"
+            sleep 30
+          done
+          exit 1
+
+      - name: versions
+        run: uv pip list | grep -Ei '^(nucore|nustd|nuspace|nuverse) '
+
+      - name: skills up to date
+        run: .venv/bin/python -m nuskills.build --check
+
+      - name: pytest
+        run: .venv/bin/python -m pytest
