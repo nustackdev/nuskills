@@ -20,6 +20,8 @@ src/nuskills/
   build.py         assembles skills/ from headers + pieces
 skills/            built skills, committed, never edited by hand
 .claude-plugin/    plugin.json + marketplace.json: the repo is a Claude Code plugin
+.codex-plugin/     plugin.json: the same skills as a Codex plugin
+.agents/plugins/   marketplace.json: the repo is a Codex marketplace
 tests/             the block harness, the loader tests, the skills checks
 ```
 
@@ -71,6 +73,16 @@ claude plugin install nuskills@nustack
 ```
 
 Inside a session, `/plugin marketplace add nustackdev/nuskills` then `/plugin install nuskills@nustack` do the same. The skills show up as `/nuskills:nu` and `/nuskills:nuspace`, and Claude also loads them on its own when a task matches their description. To try a local checkout without installing: `claude --plugin-dir path/to/nuskills`. Validate after editing the manifests: `claude plugin validate .`.
+
+### Installing in Codex
+
+The same repo is a Codex marketplace (`nustack`) with the same plugin, reading the same `skills/`:
+
+```bash
+codex plugin marketplace add nustackdev/nuskills
+```
+
+Then `/plugins` in a session to install `nuskills`. Codex loads a skill when a task matches its description, or call one by name with `$nu` or `$nuspace`. Without the plugin, copying `skills/nu` and `skills/nuspace` into `~/.agents/skills` (or a repo's `.agents/skills`) works too.
 
 ## Writing a piece
 
@@ -128,5 +140,5 @@ Each block is its own test, id `<piece>:<line>`, the line of its opening fence, 
 
 `nuskills` versions on its own, not in step with nu. CI tests the corpus against both current main and the latest released stack, so a version only says what changed in the text. `.claude-plugin/plugin.json` carries the same version as `pyproject.toml` (a test checks it), so installed plugins update when it moves.
 
-Release: bump `version` in `pyproject.toml` and `.claude-plugin/plugin.json`, rename the CHANGELOG's `Unreleased` heading to the version + date, commit and push, then `git tag nuskills@X.Y.Z && git push origin nuskills@X.Y.Z`. `.github/workflows/publish.yml` publishes to PyPI (trusted publisher) and cuts a GitHub Release.
+Release: bump `version` in `pyproject.toml`, `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, rename the CHANGELOG's `Unreleased` heading to the version + date, commit and push, then `git tag nuskills@X.Y.Z && git push origin nuskills@X.Y.Z`. `.github/workflows/publish.yml` publishes to PyPI (trusted publisher) and cuts a GitHub Release.
 

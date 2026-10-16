@@ -16,6 +16,8 @@ from nuskills.skills import SKILLS
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_DIR = ROOT / "skills"
 PLUGIN = ROOT / ".claude-plugin"
+CODEX = ROOT / ".codex-plugin"
+CODEX_MARKET = ROOT / ".agents" / "plugins" / "marketplace.json"
 
 
 def test_skills_are_up_to_date():
@@ -86,3 +88,14 @@ def test_plugin_manifests():
     assert [p["name"] for p in market["plugins"]] == [plugin["name"]]
     assert market["plugins"][0]["source"] == "./"
     assert sorted(p.name for p in SKILLS_DIR.iterdir()) == sorted(s.name for s in SKILLS)
+
+
+def test_codex_manifests():
+    claude = json.loads((PLUGIN / "plugin.json").read_text("utf-8"))
+    plugin = json.loads((CODEX / "plugin.json").read_text("utf-8"))
+    market = json.loads(CODEX_MARKET.read_text("utf-8"))
+    assert plugin["name"] == claude["name"]
+    assert plugin["version"] == claude["version"], "the Codex and Claude Code plugins move together"
+    assert plugin["skills"] == "./skills/"
+    assert [p["name"] for p in market["plugins"]] == [plugin["name"]]
+    assert market["plugins"][0]["source"] == {"source": "local", "path": "./"}
