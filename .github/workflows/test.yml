@@ -94,7 +94,7 @@ jobs:
 
       - name: versions
         working-directory: nuskills
-        run: uv pip list | grep -Ei '^(nucore|nustd|nuspace|nuverse) '
+        run: uv pip list --python .venv/bin/python | grep -Ei '^(nucore|nustd|nuspace|nuverse) '
 
       - name: ruff
         working-directory: nuskills
@@ -148,7 +148,7 @@ jobs:
           exit 1
 
       - name: versions
-        run: uv pip list | grep -Ei '^(nucore|nustd|nuspace|nuverse) '
+        run: uv pip list --python .venv/bin/python | grep -Ei '^(nucore|nustd|nuspace|nuverse) '
 
       - name: skills up to date
         run: .venv/bin/python -m nuskills.build --check
