@@ -61,7 +61,7 @@ The only way a value enters a chain of steps is a write: `ref.set(query)` is a C
 
 Spans are transparent: `nu.TryCatch(query, ...)`, `nustd.kv.Snapshot(query)`, `nu.Provide(dict, {}, query)` still yield, so they fit a value slot and never a body. Wrapping a Query in a Span never makes it a step; set it into a Ref.
 
-A Command's target must be a Ref (`ref_slots`): `nu.SetItem(nu.Dict.of(a=1), "k", 1)` is refused because a computed dict is not an address.
+A Command's target must be a Ref (`ref_slots`): `nu.Dict.of(a=1).set_item("k", 1)` is refused because a computed dict is not an address.
 
 ## Structural slots and value slots
 
@@ -98,6 +98,7 @@ One term, two different addresses: nothing in Python closes over the key. The sa
 - One program per app. Shapes at the top of the module, module-level terms composed with `>>` `|` `&`, one `nu.With(...)` at the bottom binding every fabric, then run.
 - Every runtime dependency is a bracket in that `With`. Never a Python object that holds a bound Context and exposes `.method(...)` (`open_store(path)`, `Logger(stream)`): the Ref names the location, the bracket binds the fabric.
 - A reusable factory returns a raw term and leaves binding to whoever assembles the app; it does not bake in its own `With`. The same term then runs against `memory_navigator()` in a test and `rocksdb_navigator(path)` in production.
+- Chain forms (`xs.iter().filter(f).to_list()`, `a.and_(b)`); an atom only where no form says it.
 - Inline a term when it is short and appears once. A `def` returning a term earns its place when it is reused, parametrized over a Shape or scope, or so long it hides the outer composition.
 - A module-level term (`seed = Cart.total.init(0) >> ...`) reads better than a zero-argument helper that returns it.
 - Do not split a `>>` chain across functions just to name it. The `>>` already shows the order.

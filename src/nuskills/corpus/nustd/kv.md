@@ -44,11 +44,12 @@ restock = nustd.kv.RetryOnConflict(
 )
 
 # A read is a Query: stream the entries, filter, project each one into a plain dict row.
-low_rows = nu.Collect(
-    nu.Map(
-        nu.Filter(nu.Iter(Shop.stock.items()), lambda entry: entry[1]["qty"] < 5),
-        lambda entry: nu.Dict.of(id=entry[0], name=entry[1]["name"], qty=entry[1]["qty"]),
-    )
+low_rows = (
+    Shop.stock.items()
+    .iter()
+    .filter(lambda entry: entry[1]["qty"] < 5)
+    .map(lambda entry: nu.Dict.of(id=entry[0], name=entry[1]["name"], qty=entry[1]["qty"]))
+    .to_list()
 )
 report = nustd.kv.Transaction(Shop.low.set(low_rows), scope=Shop)
 
@@ -134,8 +135,8 @@ app = nu.With(
 
 Reads are composed in Nu, never pulled into Python and looped over.
 
-- `.keys()`, `.values()`, `.items()` yield a list; `nu.Iter(...)` turns it into a stream for `nu.Map`, `nu.Filter`, `nu.ForEachDo`. `.items()` gives `(key, value)` pairs: `entry[0]`, `entry[1]["field"]`. A Shape value from `.values()` is indexed the same way, `todo["done"]`; attribute access (`todo.done`) fails at run time.
-- A stream reaches a scalar slot only through a reduction: `nu.Collect`, `nu.First`, `nu.Count`, `nu.Sum`. `nu.Len` is not one: it takes the list (`nu.Len(Shop.stock)`), and over a stream it is refused (`scalar_stream_refused`). Several counts over one store go in one `nu.Dict.of(...)` under one `Snapshot`.
+- `.keys()`, `.values()`, `.items()` yield a list; `.iter()` opens it as a stream to chain `.filter(...)`, `.map(...)`, `.to_list()`, or to loop with `nu.ForEachDo`. `.items()` gives `(key, value)` pairs: `entry[0]`, `entry[1]["field"]`. A Shape value from `.values()` is indexed the same way, `todo["done"]`; attribute access (`todo.done`) fails at run time.
+- A stream reaches a scalar slot only through `.to_list()`, `.first()` or a reduction atom (`nu.Count`, `nu.Sum`). `.len()` is not one: it is on the container (`Shop.stock.len()`), not on a stream. Several counts over one store go in one `nu.Dict.of(...)` under one `Snapshot`.
 - Rows are dicts built with `nu.Dict.of`. Do not wrap them in Python classes; format fields with a `@nu.host` function inside the row expression.
 - `.len()`, `.contains(k)` and `.keys()` are answered by storage without loading the values.
 
@@ -204,11 +205,8 @@ def add(text):
 
 
 #: The texts of the open todos, in the order they were added.
-still_open = nu.Collect(
-    nu.Map(
-        nu.Filter(nu.Iter(Todos.entries.values()), lambda t: nu.Bool(t["done"]).not_()),
-        lambda t: t["text"],
-    )
+still_open = (
+    Todos.entries.values().iter().filter(lambda t: t["done"].not_()).map(lambda t: t["text"]).to_list()
 )
 
 

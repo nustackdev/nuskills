@@ -94,7 +94,7 @@ def out(plane):
 
     def add(typed):
         made = ops.add_plane(backend="async", name=nu.Str(typed), parent=plane, ui=True)
-        return nu.IfDo(nu.Str(typed) != "", made >> View.add.name.set(""))
+        return nu.IfDo(typed != "", made >> View.add.name.set(""))
 
     return (
         View.add.name.set("")

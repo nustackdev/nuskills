@@ -30,9 +30,9 @@ def out():
 ```
 
 - `.init(v)` writes only when the slot is missing: the usual seed step at the start of a program.
-- `.exists()`, `.missing()`, `.is_empty()`, `.not_empty()`, `nu.IsEmpty(x)`, `nu.NotEmpty(x)` test for it and always yield a plain bool.
-- `x.fallback(a, b)` (or `nu.Fallback(x, a, b)`) yields the first operand that is not `EMPTY`. It checks presence, not truthiness: `0` and `""` are kept.
-- `IfDo`, `WhileDo` and `Filter` treat an `EMPTY` condition as false.
+- `.exists()`, `.missing()`, `.is_empty()`, `.not_empty()` test for it and always yield a plain bool.
+- `x.fallback(a, b)` (the atom `nu.Fallback`) yields the first operand that is not `EMPTY`. It checks presence, not truthiness: `0` and `""` are kept.
+- `IfDo`, `WhileDo` and `.filter` treat an `EMPTY` condition as false.
 
 ## When errors surface
 
@@ -63,8 +63,8 @@ The laws:
 | `flow_body_is_mutator` | a Ref or Query as a step in `>>`, a branch or a loop body |
 | `control_param_is_yielder` | a Command in a `cond`, `items` or other parameter slot |
 | `ref_slots` | a Command whose target is not a Ref |
-| `scalar_stream_refused` | a stream where one value is wanted; reduce it first (`nu.Collect`, `nu.First`) |
-| `reduction_takes_stream` | a Reduction over a plain list; open it with `.iter()` or `nu.Iter` |
+| `scalar_stream_refused` | a stream where one value is wanted; drain it first (`.to_list()`, `.first()`) |
+| `reduction_takes_stream` | a Reduction over a plain list; open it with `.iter()` |
 | `async_atom_needs_loop` | an async-only atom off the event loop |
 | `program_mutates` | warning only: the program writes nothing |
 
@@ -84,11 +84,11 @@ class Job(nu.Shape):
     log = nu.ListRef.slot(str)
 
 
-risky = Job.result.set(nu.Div(1, 0))
+risky = Job.result.set(nu.Int(1) / 0)
 
 guarded = nu.TryCatch(
     risky,
-    catch=lambda err: Job.note.set(nu.Str("failed: ") + err),
+    catch=lambda err: Job.note.set("failed: " + err),
     finally_=Job.log.append("tried"),
     errors=ZeroDivisionError,
 )
@@ -99,8 +99,8 @@ retried = nu.Retry(
     delay=0.01,
     backoff=2.0,
     jitter=0.1,
-    on_attempt_fail=lambda err, attempt: Job.log.append(nu.Str("attempt ") + nu.str(attempt)),
-    on_fail=lambda err, attempt: Job.note.set(nu.Str("gave up: ") + err),
+    on_attempt_fail=lambda err, attempt: Job.log.append("attempt " + nu.str(attempt)),
+    on_fail=lambda err, attempt: Job.note.set("gave up: " + err),
 )
 
 
@@ -108,10 +108,10 @@ def out():
     return nu.Provide(dict, {"log": []}, guarded >> retried)
 ```
 
-- `nu.TryCatch(body, catch=None, finally_=None, errors=None)`. `catch` runs in place of the body on a matching error: a term, a lambda over the error, or a term reading `nu.Attr("error")`. Around a value, `catch` is the fallback value: `Job.result.set(nu.TryCatch(nu.Div(1, 0), catch=0.0))`. `errors=` narrows which exception types it catches; anything else propagates. `finally_` runs either way and never stops the error.
+- `nu.TryCatch(body, catch=None, finally_=None, errors=None)`. `catch` runs in place of the body on a matching error: a term, a lambda over the error, or a term reading `nu.Attr("error")`. Around a value, `catch` is the fallback value: `Job.result.set(nu.TryCatch(nu.Int(1) / 0, catch=0.0))`. `errors=` narrows which exception types it catches; anything else propagates. `finally_` runs either way and never stops the error.
 - `nu.Retry(body, max_attempts=3, ...)` re-runs the body on failure. Under `nu.run` it is a bare retry (`max_attempts`, `errors` only). Under `nu.arun` it adds `delay`, `backoff`, `jitter` and the hooks `on_attempt_fail(err, attempt)`, `on_success(attempt)`, `on_fail(err, attempt)`. Without `on_fail` the last error re-raises. Use jitter when many workers retry the same thing.
 - Retry is for failed attempts, not for waiting until something becomes true; that is a reactive wait ([`nu/reactive`](../../reference/nu/reactive.md)).
 - `nu.Timeout(seconds, body, on_timeout=None)` bounds a body by wall-clock time, async only. Without `on_timeout` it raises `TimeoutError`.
-- `nu.raise_(ValueError, msg)` raises from inside the program; gate it with `IfDo`: `nu.IfDo(Cart.total > 100, nu.raise_(ValueError, nu.Str("too big: ") + nu.str(Cart.total)))`.
+- `nu.raise_(ValueError, msg)` raises from inside the program; gate it with `IfDo`: `nu.IfDo(Cart.total > 100, nu.raise_(ValueError, "too big: " + nu.str(Cart.total)))`.
 - **`nu.Noop()` swallows nothing.** In `catch`, `on_timeout` and `on_fail`, a `Noop` counts as absent, so `TryCatch(body, catch=nu.Noop())` re-raises and `Timeout(s, body, on_timeout=nu.Noop())` still raises `TimeoutError`. Swallowing says what happened: `catch=Log.lines.append("skipped")`, `on_timeout=Job.note.set("late")`, `catch=nu.print("skipped")`, or a fallback value around a Query.
 - Do not wrap `nu.run(...)` in a Python `try` as the app's error handling. The run aborts at the first unhandled error, after whatever writes already landed; put the policy in the program where it can retry, fall back or record.

@@ -19,15 +19,14 @@ class Cart(nu.Shape):
     label = nu.StrRef.slot()
 
 
-PRICES = {"apple": 3, "pear": 5, "fig": 11}
+PRICES = nu.Dict({"apple": 3, "pear": 5, "fig": 11})
 
 checkout = (
     Cart.goods.init([])
     >> Cart.total.init(0)
     >> nu.ForEachDo(
-        nu.Iter(["apple", "pear", "fig"]),
-        lambda item: Cart.goods.append(item)
-        >> Cart.total.set(Cart.total + nu.GetItem(PRICES, item)),
+        ["apple", "pear", "fig"],
+        lambda item: Cart.goods.append(item) >> Cart.total.set(Cart.total + PRICES[item]),
     )
     >> nu.IfDo(Cart.total > 10, Cart.label.set("big"), Cart.label.set("small"))
     >> nu.WhileDo(Cart.total < 50, Cart.total.set(Cart.total * 2))
@@ -41,8 +40,8 @@ def out():
 Final state: `{'goods': ['apple', 'pear', 'fig'], 'total': 76, 'label': 'big'}`.
 
 - `.init(v)` seeds a missing slot. Without it the first `append` reads `EMPTY` and raises `ValueError: cannot write with an EMPTY operand`.
-- The loop lambda runs once, at construct time. `item` is a Ref to the current element, not a string: it composes (`nu.GetItem(PRICES, item)`) but Python cannot inspect it.
-- A plain Python list or dict in a value slot becomes a literal: `nu.Iter([...])`, `PRICES`.
+- The loop lambda runs once, at construct time. `item` is a Ref to the current element, not a string: it composes (`PRICES[item]`) but Python cannot inspect it.
+- A plain Python list in a value slot becomes a literal. `nu.Dict(...)` gives the dict a Form, so `PRICES[item]` indexes it.
 - `Cart.total + x` and `Cart.total > 10` build terms, not numbers and bools; `nu.IfDo` and `nu.WhileDo` decide at run time. A Python `if` here would run once and leave no trace in the program.
 - To see the state from Python, bind the dict from outside: `state = {}; nu.run(checkout, nu.Context().bind(dict, state))`.
 
@@ -100,9 +99,9 @@ def settle(oid: nu.Nu) -> nu.Nu:
     )
 
 
-report = Book.summary.set(nu.Dict.of(orders=nu.Len(Book.orders), revenue=Book.revenue))
+report = Book.summary.set(nu.Dict.of(orders=Book.orders.len(), revenue=Book.revenue))
 
-program = seed >> nu.ForEachDo(nu.Iter(Book.orders.keys()), settle) >> report
+program = seed >> nu.ForEachDo(Book.orders.keys().iter(), settle) >> report
 
 
 def out():
@@ -146,11 +145,10 @@ TEXT = "the quick brown fox jumps over the lazy dog"
 count = nu.Frame(
     Tally,
     nu.ForEachDo(
-        nu.Iter(words_of(TEXT)),
-        lambda w: Tally.words.inc()
-        >> nu.IfDo(nu.Gt(nu.Len(w), nu.Len(Tally.longest)), Tally.longest.set(w)),
+        words_of(TEXT),
+        lambda w: Tally.words.inc() >> nu.IfDo(w.len() > Tally.longest.len(), Tally.longest.set(w)),
     )
-    >> Report.stats.set(nu.Dict.of(words=Tally.words, longest_len=nu.Len(Tally.longest))),
+    >> Report.stats.set(nu.Dict.of(words=Tally.words, longest_len=Tally.longest.len())),
     words=0,
     longest="",
 )
@@ -165,4 +163,4 @@ Final state: `{'stats': {'words': 9, 'longest_len': 5}}`.
 - `@nu.host` makes `words_of` an atom. It runs when the program runs, on the resolved value of its argument.
 - `nu.Frame(Tally, body, words=0, longest="")` gives the body a fresh private dict for `Tally`, seeded from the keywords, dropped at the end. Scratch counters live there, not in Python globals or the app's state.
 - `Report` is bound separately (`tag=Report`), so only the result outlives the run.
-- `nu.Len(...)` is a bare atom with no Form, so the comparison is spelled `nu.Gt(a, b)`. Refs and Forms (`Tally.words`, `ref.len()`) overload `>` directly.
+- `w.len() > Tally.longest.len()` is all forms: the element and the slot both carry `.len()`, and `>` compares them.

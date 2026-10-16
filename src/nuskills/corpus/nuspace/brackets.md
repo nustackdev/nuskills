@@ -81,7 +81,7 @@ class Seen(nuspace.CellState):
 
 def out():
     rows = ops.snapshot(ops.plane_rows())
-    return nu.let(rows, lambda got: ops.atomic_state(Seen.planes.set(nu.List(got).len())))
+    return nu.let(rows, lambda got: ops.atomic_state(Seen.planes.set(got.len())))
 ```
 
 When the read decides whether to write at all (a check and its write), keep both in one `ops.atomic_state` instead, as in the seed above: a value carried out of one bracket into another can be stale by the time it is written.

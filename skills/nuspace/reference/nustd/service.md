@@ -76,7 +76,7 @@ The kind also decides where a call may sit, by the usual composition rules:
 - A `CommandRef` call yields nothing, so it may stand in a `>>` chain but not in a value slot: `Run.sent.set(Mail.clear())` fails validation with `scalar_command cannot hold scalar_command`.
 - A `QueryRef` call yields a value nobody consumes when placed bare in a `>>` chain, which validation refuses (`flow_body_is_mutator`). Sink it: `Run.sent.set(Mail.render(name="Ada"))`.
 - An `ActionRef` call is both, so it may stand alone in a chain or feed a slot.
-- A stream needs a reduction to become one value: `nu.Collect(...)`, `nu.Sum(...)`, `nu.First(...)`, or a loop (`nu.ForEachDo(Mail.outbox(), lambda line: ...)`).
+- A stream call has no Form; a reduction atom makes it one value: `nu.Collect(...)`, `nu.Sum(...)`, `nu.First(...)`, or a loop (`nu.ForEachDo(Mail.outbox(), lambda line: ...)`).
 
 ## Declaring and calling
 

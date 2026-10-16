@@ -59,7 +59,7 @@ class App(nustd.ui.Index):
 
 
 h = App.home
-greet = nu.IfDo(nu.Str(h.ask.name) != "", h.said.set(nu.Str("Hello, ") + nu.Str(h.ask.name)))
+greet = nu.IfDo(nu.Str(h.ask.name) != "", h.said.set("Hello, " + nu.Str(h.ask.name)))
 ui = h.said.set("") >> nu.ReactForever(h.ask.go.on_click(), greet)
 
 
@@ -187,7 +187,7 @@ def new_id():
 
 def add(typed):
     todo = nu.Dict.of(text=typed, done=False)
-    return nu.IfDo(nu.Str(typed) != "", Todos.entries[new_id()].set(todo) >> h.bar.text.set(""))
+    return nu.IfDo(typed != "", Todos.entries[new_id()].set(todo) >> h.bar.text.set(""))
 
 
 def row(key):
@@ -205,7 +205,7 @@ def row(key):
     )
 
 
-left = nu.Count(nu.Filter(nu.Iter(Todos.entries.values()), lambda t: nu.Bool(t["done"]).not_()))
+left = nu.Count(Todos.entries.values().iter().filter(lambda t: t["done"].not_()))
 
 ui = nu.ParallelAsync(
     nu.ReactForever(h.bar.add.on_click(), nu.let(nu.Str(h.bar.text).strip(), add)),

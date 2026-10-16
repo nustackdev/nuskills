@@ -45,7 +45,7 @@ def out():
 - Children resolve first, then the function runs on their values. A Ref passed in arrives as the value it holds (`Post.title` arrives as `"Hello World"`), a literal arrives as itself. Positional children land as positional args, keyword children as kwargs.
 - The function never sees a Context, a Ref or a term. It cannot read the store on its own or write anything. Reads and writes stay at Refs in the program; the host function only turns values into a value.
 - It runs every time its atom is evaluated. There is no caching and no folding, so a clock or an id minter is fresh on each loop turn and each run.
-- An `EMPTY` child stops the call and the atom yields `EMPTY` (an unset slot reads `EMPTY`). Writing that on with `.set(...)` raises `ValueError: cannot store EMPTY`. Seed the slot first, or give a default with `nu.Fallback(slug_of(Post.title, 0), "untitled")`. Pass `propagate_sentinels=False` to let `EMPTY` reach the function instead.
+- An `EMPTY` child stops the call and the atom yields `EMPTY` (an unset slot reads `EMPTY`). Writing that on with `.set(...)` raises `ValueError: cannot store EMPTY`. Seed the slot first, or give a default with `nu.Str(slug_of(Post.title, 0)).fallback("untitled")`. Pass `propagate_sentinels=False` to let `EMPTY` reach the function instead.
 - An `async def` becomes an async-only atom: the program must run under `nu.arun`.
 - Extra keywords declare attributes on the atom class. There is no purity or caching flag: `@nu.host(deterministic=True)` is accepted and read by nothing.
 - A lambda has no usable name, so wrap it with one: `Twice = nu.host(lambda x: x * 2, name="Twice")`.
@@ -72,4 +72,4 @@ Two calls to the same host atom at two places in a program fire at two moments. 
 
 Do not subclass `ScalarQuery` to reach the runtime Context or to call `nu.run` from inside an atom: that hides reads and writes from the effect analysis. A value is a host function, a read is a Query over Refs, a mutation that also yields is an Action on a fabric.
 
-To format rows, compose a host function into the row expression (`nu.Dict.of(when=fmt_ts(row["ts"]), ...)` inside a `nu.Map`), never pull rows out to Python and loop.
+To format rows, compose a host function into the row expression (`rows.iter().map(lambda row: nu.Dict.of(when=fmt_ts(row["ts"]), ...))`), never pull rows out to Python and loop.

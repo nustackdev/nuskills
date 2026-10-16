@@ -84,23 +84,26 @@ Two slot forms, mixable in one class: the annotation (`title: nu.StrRef`) when t
 
 Verbs on every slot: `set init erase exists missing is_empty not_empty fallback`; `init(v)` writes only when the slot is missing. Per type: `inc dec` on `IntRef`; `append extend insert pop remove clear sort reverse len contains index first_elem last_elem slice iter` on `ListRef`; `keys values items get_item set_item del_item update setdefault pop len contains` on `DictRef`; `add discard remove union ...` on `SetRef`; the `str` methods (`upper split startswith ...`) on `StrRef`. Containers declare their element: `nu.DictRef.slot(Movie)`, then `Library.shelf["dune"].title` addresses inside one entry. A slot may not share a name with one of these verbs ([nu/pitfalls](reference/nu/pitfalls.md)).
 
-### Python operators build Nu
+### Forms first
 
-Refs and computed values carry a typed **Form** (`Int`, `Str`, `Bool`, `List`, ...) that overloads Python's operators:
+Refs and computed values carry a typed **Form** (`Int`, `Str`, `Bool`, `List`, `Iterator`, ...) whose Python operators and methods build the atoms. Write the form; the atom is what it compiles to.
 
-- arithmetic `+ - * / // % **` builds `Add`, `Sub`, ...
-- comparison `< <= > >= == !=` builds `Lt`, ..., `Eq`, `Ne`, each a `Bool`
-- `x[k]` builds a keyed Ref or `GetItem`; `x.name` on a Shape Ref descends to the nested slot
-- boolean logic is a method, never a keyword: `a.and_(b)`, `a.or_(b)`, `a.not_()`, or `nu.And`, `nu.Or`, `nu.Not`
+| Write | Compiles to |
+| --- | --- |
+| `a + b`, `a * 2`, `"id-" + nu.str(n)` | `nu.Add`, `nu.Mul`, ... |
+| `a == b`, `a != ""`, `a > 3`, `a <= b` | `nu.Eq`, `nu.Ne`, `nu.Gt`, `nu.Le` |
+| `a.and_(b)`, `a.or_(b)`, `a.not_()` | `nu.And`, `nu.Or`, `nu.Not` |
+| `a >> b`, `a \| b`, `a & b` | `nu.Sequential`, `nu.Parallel`, `nu.Race` |
+| `x.len()`, `x.contains(k)`, `d[k]`, `d.get_item(k, default)` | `nu.Len`, `nu.Contains`, `nu.GetItem`, `nu.Get` |
+| `x.fallback(0)`, `x.is_empty()`, `x.not_empty()` | `nu.Fallback`, `nu.IsEmpty`, `nu.NotEmpty` |
+| `xs.iter().filter(f).map(g).to_list()`, `.first()` | `nu.Collect(nu.Map(nu.Filter(nu.Iter(xs), f), g))`, `nu.First` |
+| `s.strip()`, `s.split(",")`, `s.upper()`, `nu.Str(", ").join(xs)` | the `str` atoms |
 
-A plain Python value becomes a literal wherever a child is expected (`Library.tags.append("dune")`, `nu.Iter([1, 2])`). A bare literal has no operators; give it a Form: `nu.Int(5) > 3`.
-
-- `nu.Str(x)`, `nu.Int(x)`, `nu.List(x)` only type `x`; they do not convert.
-- `nu.str(x)`, `nu.int(x)`, `nu.float(x)`, `nu.list(x)` convert and keep the Form: `nu.Str("id-") + nu.str(Movie.year)`.
-- `nu.ToStr`, `nu.ToInt` convert but yield a bare atom with no operators. Prefer the lowercase forms.
-- A dict built in the program: `nu.Dict.of(title=Movie.title, year=Movie.year)`; a list: `nu.List.of(a, b)`.
-
-Reach for named atoms (`nu.Gt(a, b)`, `nu.GetItem(x, k)`) only when the operator form cannot say it, such as an operator chosen from data or an operand with no Form (`nu.Len(...)`).
+- Boolean logic is a method, never a keyword: `and`, `or`, `not` raise on a term.
+- A plain Python value becomes a literal wherever a child is expected (`Library.tags.append("dune")`, `n + 1`, `x == ""`); never wrap an operand in `nu.Int(0)` or `nu.Str("")`. A bare literal standing alone has no operators; give it a Form: `nu.Int(5) > 3`, `nu.Dict(PRICES)[item]`.
+- `nu.Str(x)`, `nu.Int(x)`, `nu.List(x)` only type `x`; they do not convert. `nu.str(x)`, `nu.int(x)`, `nu.list(x)` convert and keep the Form. `nu.ToStr`, `nu.ToInt` convert to a bare atom with no operators.
+- Build a dict with `nu.Dict.of(title=Movie.title, year=Movie.year)`, a list with `nu.List.of(a, b)`.
+- No form yet: the stream reductions `nu.Count`, `nu.Sum`, `nu.Min`, `nu.Max`, `nu.Last`, `nu.AnyOf`, `nu.AllOf` and `nu.SortBy` take the stream as an argument (`nu.Sum(xs.iter())`); branching is `nu.If` / `nu.IfDo`. A host call or a service stream has no Form either: type it (`nu.Str(slug_of(t)).fallback("")`) or reduce it.
 
 ### Binding a fabric
 
@@ -355,7 +358,7 @@ class Seen(nuspace.CellState):
 
 def out():
     rows = ops.snapshot(ops.plane_rows())
-    return nu.let(rows, lambda got: ops.atomic_state(Seen.planes.set(nu.List(got).len())))
+    return nu.let(rows, lambda got: ops.atomic_state(Seen.planes.set(got.len())))
 ```
 
 When the read decides whether to write at all (a check and its write), keep both in one `ops.atomic_state` instead, as in the seed above: a value carried out of one bracket into another can be stale by the time it is written.

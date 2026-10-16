@@ -47,7 +47,7 @@ def out():
 
 Input Refs belong to the tab: the person changes the value, the program reads it.
 
-- Read the live value by wrapping the Ref in a form: `nu.Str(name)` for text, select, radio and date; `nu.Bool(flag)` for checkbox, switch and toggle; `nu.float(slider)` for slider and number input; `nu.List(tags)` for tag input. Each read is a round trip to the tab, made when the term evaluates.
+- A ui Ref is not a Form. Read the live value by wrapping it in one: `nu.Str(name)` for text, select, radio and date; `nu.Bool(flag)` for checkbox, switch and toggle; `nu.float(slider)` for slider and number input; `nu.List(tags)` for tag input. Each read is a round trip to the tab, made when the term evaluates.
 - `button.on_click()` and `input.on_change()` are subscriptions. `nu.ReactForever(sub, body)` runs `body` once per event, forever. `body` is a term, or a lambda over the event payload (`lambda ev: ... ev["key"] ...`).
 - A Ref with several kinds of event names them: `TableRef.on_edit()` gives `{key, row_index, column, value, previous}`, `on_row_click()` gives `{row_index, key}`, `on_select()` gives `{keys, row_indexes}`. Each needs its prop (`editable=True`, `clickable_rows=True`, `selection="single"`).
 - Two reactions that each run forever are two arms of `nu.ParallelAsync`, never `>>` (nu/reactive).
@@ -64,7 +64,7 @@ said = nustd.ui.TextRef("said")
 
 
 def out():
-    text = nu.Str("Hello, ") + nu.Str(name)
+    text = "Hello, " + nu.Str(name)
     shout = nu.IfDo(nu.Bool(loud), said.set(text.upper()), said.set(text))
     return (
         name.set("")
