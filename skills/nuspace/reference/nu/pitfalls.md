@@ -48,7 +48,7 @@ Construct-time Python is still the right tool for shaping the term from data you
 - **`nu.print(...)` is a Command.** It writes to stdout and yields `None`; it hands nothing back to the caller. To see a value, make it the program's yield.
 - **Forms type, they do not convert.** `"n=" + nu.Str(Cart.total)` fails at run time on an int. `nu.str(x)`, `nu.int(x)` convert and keep the Form (`nu.int(Form.age) + 1`). `nu.ToStr` / `nu.ToInt` convert but yield a bare atom with no `+`.
 - **Some atoms have no Form.** `nu.Literal(5) > 3` and `nu.Len(x) > 3` raise `TypeError` at construct time. Give them one: `nu.Int(5) > 3`, `ref.len() > 3`, `nu.Str(x).len() > 3`.
-- **Reductions take streams.** `nu.Sum(ref)` is refused (`reduction_takes_stream`); write `nu.Sum(ref.iter())`. `nu.Sorted(ref)` takes the list itself. A count over a chain is `nu.Count(ref.iter().filter(f))`.
+- **Reductions take streams.** `nu.Sum(ref)` is refused (`reduction_takes_stream`); write `ref.iter().sum()`. `nu.Sorted(ref)` takes the list itself. A count over a chain is `ref.iter().filter(f).count()`.
 
 ## Names
 

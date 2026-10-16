@@ -145,13 +145,15 @@ Refs and computed values carry a typed **Form** (`Int`, `Str`, `Bool`, `List`, `
 | `x.len()`, `x.contains(k)`, `d[k]`, `d.get_item(k, default)` | `nu.Len`, `nu.Contains`, `nu.GetItem`, `nu.Get` |
 | `x.fallback(0)`, `x.is_empty()`, `x.not_empty()` | `nu.Fallback`, `nu.IsEmpty`, `nu.NotEmpty` |
 | `xs.iter().filter(f).map(g).to_list()`, `.first()` | `nu.Collect(nu.Map(nu.Filter(nu.Iter(xs), f), g))`, `nu.First` |
+| `xs.iter().count()`, `.sum()`, `.min()`, `.max()`, `.last()`, `.any()`, `.all()` | `nu.Count`, `nu.Sum`, `nu.Min`, `nu.Max`, `nu.Last`, `nu.AnyOf`, `nu.AllOf` |
+| `xs.iter().sort_by(f)`, `.unique()`, `.enumerate()`, `.zip(ys)`, `.sorted()` | `nu.SortBy`, `nu.Unique`, `nu.Enumerate`, `nu.Zip`, `nu.Sorted` |
 | `s.strip()`, `s.split(",")`, `s.upper()`, `nu.Str(", ").join(xs)` | the `str` atoms |
 
 - Boolean logic is a method, never a keyword: `and`, `or`, `not` raise on a term.
 - A plain Python value becomes a literal wherever a child is expected (`Library.tags.append("dune")`, `n + 1`, `x == ""`); never wrap an operand in `nu.Int(0)` or `nu.Str("")`. A bare literal standing alone has no operators; give it a Form: `nu.Int(5) > 3`, `nu.Dict(PRICES)[item]`.
 - `nu.Str(x)`, `nu.Int(x)`, `nu.List(x)` only type `x`; they do not convert. `nu.str(x)`, `nu.int(x)`, `nu.list(x)` convert and keep the Form. `nu.ToStr`, `nu.ToInt` convert to a bare atom with no operators.
 - Build a dict with `nu.Dict.of(title=Movie.title, year=Movie.year)`, a list with `nu.List.of(a, b)`.
-- No form yet: the stream reductions `nu.Count`, `nu.Sum`, `nu.Min`, `nu.Max`, `nu.Last`, `nu.AnyOf`, `nu.AllOf` and `nu.SortBy` take the stream as an argument (`nu.Sum(xs.iter())`); branching is `nu.If` / `nu.IfDo`. A host call or a service stream has no Form either: type it (`nu.Str(slug_of(t)).fallback("")`) or reduce it.
+- A stream ends in a fold that keeps chaining: `xs.iter().filter(f).sum() > 10`. Branching has no form: `nu.If` / `nu.IfDo`. A host call or a service stream has no Form either: type it (`nu.Str(slug_of(t)).fallback("")`) or reduce it.
 
 ### Binding a fabric
 
@@ -359,7 +361,7 @@ Construct-time Python is still the right tool for shaping the term from data you
 - **`nu.print(...)` is a Command.** It writes to stdout and yields `None`; it hands nothing back to the caller. To see a value, make it the program's yield.
 - **Forms type, they do not convert.** `"n=" + nu.Str(Cart.total)` fails at run time on an int. `nu.str(x)`, `nu.int(x)` convert and keep the Form (`nu.int(Form.age) + 1`). `nu.ToStr` / `nu.ToInt` convert but yield a bare atom with no `+`.
 - **Some atoms have no Form.** `nu.Literal(5) > 3` and `nu.Len(x) > 3` raise `TypeError` at construct time. Give them one: `nu.Int(5) > 3`, `ref.len() > 3`, `nu.Str(x).len() > 3`.
-- **Reductions take streams.** `nu.Sum(ref)` is refused (`reduction_takes_stream`); write `nu.Sum(ref.iter())`. `nu.Sorted(ref)` takes the list itself. A count over a chain is `nu.Count(ref.iter().filter(f))`.
+- **Reductions take streams.** `nu.Sum(ref)` is refused (`reduction_takes_stream`); write `ref.iter().sum()`. `nu.Sorted(ref)` takes the list itself. A count over a chain is `ref.iter().filter(f).count()`.
 
 ### Names
 

@@ -202,7 +202,7 @@ def row(key):
     )
 
 
-left = nu.Count(Todos.entries.values().iter().filter(lambda t: t["done"].not_()))
+left = Todos.entries.values().iter().filter(lambda t: t["done"].not_()).count()
 
 ui = nu.ParallelAsync(
     nu.ReactForever(h.bar.add.on_click(), nu.let(nu.Str(h.bar.text).strip(), add)),

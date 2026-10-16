@@ -136,7 +136,7 @@ app = nu.With(
 Reads are composed in Nu, never pulled into Python and looped over.
 
 - `.keys()`, `.values()`, `.items()` yield a list; `.iter()` opens it as a stream to chain `.filter(...)`, `.map(...)`, `.to_list()`, or to loop with `nu.ForEachDo`. `.items()` gives `(key, value)` pairs: `entry[0]`, `entry[1]["field"]`. A Shape value from `.values()` is indexed the same way, `todo["done"]`; attribute access (`todo.done`) fails at run time.
-- A stream reaches a scalar slot only through `.to_list()`, `.first()` or a reduction atom (`nu.Count`, `nu.Sum`). `.len()` is not one: it is on the container (`Shop.stock.len()`), not on a stream. Several counts over one store go in one `nu.Dict.of(...)` under one `Snapshot`.
+- A stream reaches a scalar slot only through `.to_list()`, `.first()` or a fold (`.count()`, `.sum()`). `.len()` is not one: it is on the container (`Shop.stock.len()`), not on a stream. Several counts over one store go in one `nu.Dict.of(...)` under one `Snapshot`.
 - Rows are dicts built with `nu.Dict.of`. Do not wrap them in Python classes; format fields with a `@nu.host` function inside the row expression.
 - `.len()`, `.contains(k)` and `.keys()` are answered by storage without loading the values.
 

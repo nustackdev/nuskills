@@ -8,7 +8,7 @@ Python `if`, `for` and `while` run once, at construct time. Branching and loopin
 | --- | --- |
 | `nu.If(cond, then, else_)` | `nu.IfDo(cond, then, else_=None)` |
 | `nu.Switch(sel, {k: value}, default=)` | `nu.SwitchDo(sel, {k: body}, default=None)` |
-| `xs.iter().map(f)`, `.filter(f)`, `nu.SortBy` over a stream | `nu.ForEachDo(items, body)` |
+| `xs.iter().map(f)`, `.filter(f)`, `.sort_by(f)` | `nu.ForEachDo(items, body)` |
 | | `nu.ForRangeDo(start, stop, body, step=1)` |
 | | `nu.WhileDo(cond, body)`, `nu.ForeverDo(body)` |
 | | `nu.Delay(seconds)`, `nu.DelayedDo(seconds, body)` |
@@ -56,7 +56,7 @@ def out():
 
 ## Streams and reductions
 
-A stream starts from a container's `.iter()` (`nu.List(value).iter()` for a value), chains `.filter(f)` and `.map(f)`, stream in, stream out, pulled lazily, and leaves through `.to_list()`, `.to_set()` or `.first()`. `nu.SortBy`, `nu.Enumerate`, `nu.Zip`, `nu.Flatten`, `nu.Unique` and the Reductions `nu.Count`, `nu.Sum`, `nu.Min`, `nu.Max`, `nu.Last`, `nu.AnyOf`, `nu.AllOf` have no form yet: they take the stream as an argument.
+A stream starts from a container's `.iter()` (`nu.List(value).iter()` for a value), chains `.filter(f)` and `.map(f)`, stream in, stream out, pulled lazily, reorders with `.sort_by(f)`, `.unique()`, `.enumerate()`, `.zip(ys)`, `.flatten()`, and leaves through `.to_list()`, `.to_set()`, `.first()` or a fold: `.count()`, `.sum()`, `.min()`, `.max()`, `.last()`, `.any()`, `.all()`.
 
 ```python run
 import nu
@@ -78,14 +78,14 @@ def out():
         Shop.cheap.set(cheap.map(lambda p: p * 2).to_list())
         >> Shop.summary.set(
             nu.Dict.of(
-                count=nu.Count(Shop.prices.iter().filter(lambda p: p >= 10)),
-                top=nu.Max(Shop.prices.iter()),
+                count=Shop.prices.iter().filter(lambda p: p >= 10).count(),
+                top=Shop.prices.iter().max(),
             )
         ),
     )
 ```
 
-Cardinality is checked. A scalar consumer fed a stream is refused (`scalar_stream_refused`: `nu.Add(xs.iter().map(f), 1)`), and a Reduction fed a plain list is refused (`reduction_takes_stream`: `nu.Sum(Shop.prices)`; write `nu.Sum(Shop.prices.iter())`). `nu.Sorted(list_value)` is the exception that takes a scalar list and yields a list, like Python's `sorted`.
+Cardinality is checked. A scalar consumer fed a stream is refused (`scalar_stream_refused`: `nu.Add(xs.iter().map(f), 1)`), and a Reduction fed a plain list is refused (`reduction_takes_stream`: `nu.Sum(Shop.prices)`; write `Shop.prices.iter().sum()`). `nu.Sorted(list_value)` is the exception that takes a scalar list and yields a list, like Python's `sorted`.
 
 Several counts over one source belong in one `nu.Dict.of(...)` row, each its own walk, as above. Rows are dicts built in the program, never a Python loop over pulled results.
 
