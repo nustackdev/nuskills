@@ -1,7 +1,7 @@
 {
   "name": "nuskills",
   "displayName": "Nu skills",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Skills for writing Nu apps and programming a running nuspace.",
   "author": {
     "name": "Gor Arakelyan",
