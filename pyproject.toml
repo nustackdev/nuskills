@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 # and nuspace by tests/test_blocks.py. Versioned on its own, not in step with nu.
 [project]
 name = "nuskills"
-version = "0.1.0"
+version = "0.2.0"
 description = "Tested prompt pieces and agent skills for Nu and nuspace."
 readme = "README.md"
 license = "Apache-2.0"

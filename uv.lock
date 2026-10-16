@@ -866,7 +866,7 @@ wheels = [
 
 [[package]]
 name = "nucore"
-version = "0.6.3"
+version = "0.6.4"
 source = { editable = "../nu" }
 dependencies = [
     { name = "cloudpickle" },
@@ -901,7 +901,7 @@ source = { editable = "../nu/pkgs/nudle" }
 
 [[package]]
 name = "nuskills"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 
 [package.dev-dependencies]
@@ -932,7 +932,7 @@ dev = [
 
 [[package]]
 name = "nuspace"
-version = "0.5.3"
+version = "0.5.4"
 source = { editable = "../nuspace" }
 dependencies = [
     { name = "click" },
@@ -949,10 +949,10 @@ dependencies = [
 requires-dist = [
     { name = "click", specifier = ">=8.0" },
     { name = "nucore", editable = "../nu" },
+    { name = "nudemos", marker = "extra == 'demos'", editable = "../nuverse/pkgs/nudemos" },
     { name = "nuspace-ui", editable = "../nuspace/pkgs/ts/nuspace-ui" },
     { name = "nustd", extras = ["all"], marker = "extra == 'all'", editable = "../nu/pkgs/nustd" },
     { name = "nustd", extras = ["kv", "ui", "valkey", "mp-pool", "proxy"], editable = "../nu/pkgs/nustd" },
-    { name = "nuverse-demos", marker = "extra == 'demos'", editable = "../nuverse/pkgs/nuverse-demos" },
     { name = "rich", specifier = ">=10.7" },
     { name = "rich-click", specifier = ">=1.6" },
     { name = "typing-extensions", specifier = ">=4.7.0" },
@@ -978,7 +978,7 @@ source = { editable = "../nuspace/pkgs/ts/nuspace-ui" }
 
 [[package]]
 name = "nustd"
-version = "0.6.3"
+version = "0.6.4"
 source = { editable = "../nu/pkgs/nustd" }
 dependencies = [
     { name = "nucore" },
