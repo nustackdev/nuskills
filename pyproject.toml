@@ -1,0 +1,151 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Text only: the corpus of prompt pieces about Nu and nuspace, plus a tiny
+# loader. Every fenced block in it is built against the current nucore, nustd
+# and nuspace by tests/test_blocks.py. Versioned on its own, not in step with nu.
+[project]
+name = "nuskills"
+version = "0.1.0"
+description = "Tested prompt pieces and agent skills for Nu and nuspace."
+readme = "README.md"
+license = "Apache-2.0"
+authors = [{ name = "Gor Arakelyan", email = "gorarkln@gmail.com" }]
+requires-python = ">=3.10"
+# No runtime dependencies: the package ships text. Consumers read pieces
+# through `nuskills.load` / `importlib.resources`.
+dependencies = []
+keywords = [
+    "nu",
+    "nustack",
+    "nuspace",
+    "prompt",
+    "skills",
+    "agents",
+    "llm",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Repository = "https://github.com/nustackdev/nuskills"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nuskills"]
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src/nuskills",
+    "README.md",
+]
+
+# =============================================================================
+# Dev env: the corpus is tested against the stack as it is on main
+# =============================================================================
+# Sibling checkouts, editable, the same wiring the nuverse workspace uses.
+# `[tool.uv.sources]` never reaches published metadata.
+[tool.uv.sources]
+nucore = { path = "../nu", editable = true }
+nustd = { path = "../nu/pkgs/nustd", editable = true }
+nuspace = { path = "../nuspace", editable = true }
+nuspace-ui = { path = "../nuspace/pkgs/ts/nuspace-ui", editable = true }
+nuverse = { path = "../nuverse/pkgs/nuverse", editable = true }
+
+[tool.uv]
+default-groups = ["dev"]
+
+[dependency-groups]
+dev = [
+    # What the blocks are built against: the kernel, every fabric, nuspace,
+    # and nuverse's std snippets a nuspace piece may name.
+    "nucore",
+    "nustd[all]",
+    "nuspace",
+    "nuverse",
+    "ruff>=0.8.0",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=1.3.0",
+    "pytest-timeout>=2.1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+# `tests/_lib` is the only test directory on sys.path, and `_support` the only
+# thing in it.
+pythonpath = [
+    "tests/_lib",
+]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
+asyncio_mode = "auto"
+xfail_strict = true
+timeout = 60
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = [
+    "src",
+]
+# Corpus blocks live in markdown and are checked by the harness, not ruff.
+extend-exclude = [".venv", "build", "dist", "*.egg-info", "_archive"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "N",
+    "YTT",
+    "S",
+    "T20",
+    "D",
+    "ANN",
+    "TC",
+    "RUF",
+    "PTH",
+]
+ignore = [
+    "E501",
+    "D105",
+    "D107",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*.py" = [
+    "S101", "S108", "T20", "D", "E711", "E712", "ANN", "N806",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "nuskills",
+    "nuspace",
+    "nuverse",
+    "nu",
+    "nustd",
+]
+force-single-line = false
+lines-after-imports = 2
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
