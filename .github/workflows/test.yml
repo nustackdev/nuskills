@@ -78,12 +78,13 @@ jobs:
         with:
           python-version: "3.10"
 
-      # nuspace-ui's wheel force-includes the vite build in dist/. No test
-      # serves the browser, so a stub stands in for an npm build.
-      - name: stub the nuspace-ui bundle
+      # The nudle and nuspace-ui wheels force-include their vite builds in
+      # dist/. No test serves the browser, so stubs stand in for npm builds.
+      - name: stub the nudle and nuspace-ui bundles
         run: |
-          mkdir -p nuspace/pkgs/ts/nuspace-ui/dist
-          echo '<!doctype html>' > nuspace/pkgs/ts/nuspace-ui/dist/index.html
+          for d in nu/pkgs/ts/nudle/dist nuspace/pkgs/ts/nuspace-ui/dist; do
+            mkdir -p "$d" && echo '<!doctype html>' > "$d/index.html"
+          done
 
       # Not --locked: the siblings bump their versions on their own, and the
       # lock follows them here.
@@ -127,7 +128,7 @@ jobs:
           EVENT: ${{ github.event.action }}
           VERSION: ${{ github.event.client_payload.version }}
         run: |
-          uv venv --python 3.10
+          uv venv --clear --python 3.10
           PIN=""
           if [ -n "$VERSION" ]; then
             case "$EVENT" in
