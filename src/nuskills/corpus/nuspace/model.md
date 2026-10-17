@@ -31,7 +31,7 @@ States                         what the programs remember, by the same ids
 
 Both roots are importable: `nuspace.Space`, `nuspace.States` (and the row Shapes from `nuspace.shapes`). A kv Ref finds its store by its root class object, so **import the roots, never redeclare them**. A `class Space(nu.Shape)` of your own is a different class, and every read of it raises `LookupError: No binding for: Navigator[Space]`.
 
-Plane props are typed and set when the plane is made: `system` (protected, `remove_plane` refuses it), `ui` (the shell draws it), `made_by` (the registered Plane it came from), `backend` (`"async"` or `"mp"`, required, no default). `meta` is free, merged into any time; ui planes keep `editable`, `full_width` and `icon` there. Cell props: `made_by` (the snippet it came from) and `has_ui` (worked out from the prog whenever it is written, never by hand).
+Plane props are typed and set when the plane is made: `system` (protected, `remove_plane` refuses it), `ui` (the shell draws it), `made_by` (the registered Plane it came from, as `pkg.name`, eg `nudemos.movies`), `backend` (`"async"` or `"mp"`, required, no default). `meta` is free, merged into any time; ui planes keep `editable`, `full_width` and `icon` there. Cell props: `made_by` (the snippet it came from, eg `nuverse.text`) and `has_ui` (worked out from the prog whenever it is written, never by hand).
 
 Output and errors belong to runs, never to cells. Plane and cell are definitions; what ran and how it ended is under `Space.kernel`.
 

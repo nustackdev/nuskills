@@ -46,7 +46,7 @@ def out(plane):
 
 nuverse ships the standard snippets, one package each under `nuverse.snippets`: the package exposes `SNIPPET` and its ops. The convention:
 
-- `prose` is the text snippet (its name is `nuspace.TEXT`, `"text"`): `set_text(cell, markdown)`, `text_of(cell)`.
+- `prose` is the text snippet, `nuverse.text` (`nuspace.TEXT`), whose cells document editing works on: `set_text(cell, markdown)`, `text_of(cell)`.
 - Input snippets keep one value: `set_value(cell, value)`, `value_of(cell)` (`text_input`, `number`, `slider`, `switch`, `select`, `date`).
 - Some have no ops: a person works them in place (`table`), or they show something (`lens`, `cell_lens`, `ticker`).
 

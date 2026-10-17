@@ -97,7 +97,7 @@ A read program yields its value. A write program yields `None`. Reads and writes
 | Op | Does |
 | --- | --- |
 | `add_cell(plane_id, prog, *, cell_id=None, name="", index=None, made_by="", meta=None, into=None)` | Write a cell onto a plane at `index` (the end when None). `into` gets the id, `""` when nothing was written. |
-| `insert_snippet(plane_id, snippet, *, index=None, cell_id=None, into=None)` | `add_cell` from a `nuspace.Snippet`: its source, its name as name and `made_by` ([nuspace/snippets](../../reference/nuspace/snippets.md)). |
+| `insert_snippet(plane_id, snippet, *, index=None, cell_id=None, into=None)` | `add_cell` from a `nuspace.Snippet`: its source, its short name as name, its `pkg.name` as `made_by` ([nuspace/snippets](../../reference/nuspace/snippets.md)). |
 | `set_prog(cell_id, prog)` | Replace the source. Live runs keep the old one until rerun. A broken prog stores fine. |
 | `rename_cell(cell_id, name)`, `set_cell_meta(cell_id, fields)` | Name, merge into `meta`. |
 | `reorder_cells(plane_id, cell_ids)` | Put the named cells first in that order; the rest keep their place after them. |
