@@ -88,6 +88,7 @@ HeadingRef         set(label, level=, align=)                  level 1 to 6
 CodeRef            set(value), set_language(name), set_editable(flag)
 LinkRef            set(href=, label=, target=, external=)
 ImageRef           set(src, alt=, fit=, width=, height=, rounded=)
+HtmlRef            set(html, title=, height=, bordered=)       a whole html document in a sandboxed frame
 JsonViewerRef      set(value, expand_depth=, ...)              any structure, foldable
 ListRef            set(items, variant="bullet"|"number"), append(item), clear()
 ```
