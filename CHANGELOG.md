@@ -2,6 +2,11 @@
 
 `nuskills`: tested prompt pieces about Nu and nuspace, plus the agent skills built from them. Newest first.
 
+## 0.2.2 (2026-10-22)
+
+- List the html leaf in the ui kit pieces
+- Name nuspace planes and snippets after their package
+
 ## 0.2.1 (2026-10-17)
 
 - Install the skills as a Codex plugin, alongside Claude Code
